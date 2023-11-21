@@ -1,0 +1,28 @@
+type Error = variant {
+  RoomAlreadyBooked;
+  RoomNotFound;
+  NotOwner;
+  RoomNotAvailable;
+  NotInRoom;
+  RoomFull;
+  InsufficientPrice;
+};
+type Result = variant { Ok; Err : Error };
+type Result_1 = variant { Ok : Room; Err : Error };
+type Room = record {
+  no : nat64;
+  price_per_occupant : nat64;
+  occupants : vec text;
+  owner : text;
+  state : RoomState;
+  capacity : nat64;
+};
+type RoomState = variant { PartiallyVacant; Full; TotallyVacant };
+service : {
+  book_room : (nat64, nat64) -> (Result);
+  create_room : (nat64, nat64) -> ();
+  delete_room : (nat64) -> (Result);
+  get_room_by_number : (nat64) -> (Result_1) query;
+  get_rooms : () -> (vec Room) query;
+  unbook_room : (nat64) -> (Result);
+}
