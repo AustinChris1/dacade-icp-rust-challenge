@@ -72,7 +72,7 @@ impl ic_stable_structures::BoundedStorable for Room {
 
 thread_local! {
     static MEMORY_MANAGER: cell::RefCell<memory_manager::MemoryManager<ic_stable_structures::DefaultMemoryImpl>> = cell::RefCell::new(memory_manager::MemoryManager::init(ic_stable_structures::DefaultMemoryImpl::default()));
-    static ROOM_COUNTER: cell::RefCell<IdCell> = cell::RefCell::new(IdCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(memory_manager::MemoryId::new(0))), 1).expect("Failed to initialize ROOM counter"));
+    static ROOM_COUNTER: cell::RefCell<IdCell> = cell::RefCell::new(IdCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(memory_manager::MemoryId::new(0))), 0).expect("Failed to initialize ROOM counter"));
     // static ROOMS: cell::RefCell<StableVec<Room>> = cell::RefCell::new(StableVec::init(MEMORY_MANAGER.with(|m| m.borrow().get(memory_manager::MemoryId::new(1)))).expect("Failed to initialize vector!"));
     static ROOMS: cell::RefCell<MyVec<Room>> = cell::RefCell::new(MyVec(vec![]));
 }
@@ -105,7 +105,7 @@ fn create_room(capacity: usize, price_per_occupant: usize) -> () {
             occupants: MyVec(vec![]),
             owner: User(ic_cdk::caller().to_string()),
         };
-
+        c.borrow_mut().set(room_number + 1).expect("Failed to increment counter.");
         ROOMS.with(|r| r.borrow_mut().0.push(room));
     })
 }
@@ -130,11 +130,14 @@ fn book_room(room_no: u64, price: usize) -> Result<(), Error> {
         let occupant = User(ic_cdk::caller().to_string());
 
         match room.occupants.0.iter().find(|o| **o == occupant) {
-            Some(_) => {
+            Some(_) => return Err(Error::RoomAlreadyBooked),
+            None => {    
                 room.occupants.0.push(occupant);
+                if room.occupants.0.len() == room.capacity {
+                    room.state = RoomState::Full;
+                }
                 Ok(())
-            }
-            None => return Err(Error::RoomAlreadyBooked),
+            },
         }
     })
 }
@@ -153,6 +156,9 @@ fn unbook_room(room_no: u64) -> Result<(), Error> {
         match room.occupants.0.iter().position(|o| *o == occupant) {
             Some(index) => {
                 room.occupants.0.remove(index);
+                if room.state == RoomState::Full {
+                    room.state = RoomState::PartiallyVacant;
+                }
                 Ok(())
             }
             None => Err(Error::NotInRoom),
