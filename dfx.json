@@ -1,0 +1,30 @@
+{
+  "canisters": {
+    "hostel_manager_backend": {
+      "candid": "src/hostel_manager_backend/hostel_manager_backend.did",
+      "package": "hostel_manager_backend",
+      "type": "rust"
+    },
+    "hostel_manager_frontend": {
+      "dependencies": [
+        "hostel_manager_backend"
+      ],
+      "frontend": {
+        "entrypoint": "src/hostel_manager_frontend/src/index.html"
+      },
+      "source": [
+        "src/hostel_manager_frontend/assets",
+        "dist/hostel_manager_frontend/"
+      ],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
