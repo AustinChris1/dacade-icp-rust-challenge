@@ -1,0 +1,22 @@
+name: Deploy to Juno
+on:
+  - push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.5.1 --activate
+      - name: Install Dependencies
+        run: pnpm install
+      - name: Publish to NPM
+        run: pnpm publish --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
